@@ -12,6 +12,9 @@ enum class TokenType {
     Plus,
     Multiply,
     Power,
+    Minus,
+    DivideD,
+    DivideI,
     String,
     Print,
     Group,
@@ -46,8 +49,25 @@ vector<Token> tokenize(const std::string& source){
                 tokens.push_back({TokenType::Power, "^"});
                 i++;
                 break;
-            case '=':
+            case '-':
+                tokens.push_back({TokenType::Minus,"-"});
+                i++;
+                break;
+            case 'p':
                 tokens.push_back({TokenType::Print, "="});
+                i++;
+                break;
+            case '/':
+                if (i < source.length()-1){
+                    if (source[i+1] == '/'){
+                        tokens.push_back({TokenType::DivideI,"//"});
+                        i++;
+                    } else {
+                        tokens.push_back({TokenType::DivideD,"/"});
+                    }
+                } else {
+                    tokens.push_back({TokenType::DivideD,"/"});
+                }
                 i++;
                 break;
             case '(': {
@@ -96,7 +116,7 @@ vector<Token> tokenize(const std::string& source){
             default:
                 if (isdigit(current)){
                     string numstr = "";
-                    while (i < source.length() && isdigit(source[i])){
+                    while (i < source.length() && (isdigit(source[i]) || source[i] == '.')){
                         numstr += source[i];
                         i++;
                     }
@@ -163,6 +183,48 @@ Token compilepart(vector<Token> tokens){
                                 val = val * lval;
                             }
                             tokens[i+1].value = to_string(val);
+                            tokens[i+1].type = TokenType::Number;
+                        } else {
+                            cout << "ERROR: Value not inputted" <<'\n';
+                        }
+                    }
+                    break;
+                case TokenType::Minus:
+                    if (!(i < 1)){
+                        bool leftNum = (tokens[i-1].type == TokenType::Number || tokens[i-1].type == TokenType::Group);
+                        bool rightNum = (tokens[i+1].type == TokenType::Number || tokens[i+1].type == TokenType::Group);
+                        if (leftNum && rightNum){
+                            int lval = (tokens[i-1].type == TokenType::Group) ? stoi(compilepart(tokenize(tokens[i-1].value)).value) : stoi(tokens[i-1].value);
+                            int rval = (tokens[i+1].type == TokenType::Group) ? stoi(compilepart(tokenize(tokens[i+1].value)).value) : stoi(tokens[i+1].value);
+                            tokens[i+1].value = to_string(lval - rval);
+                            tokens[i+1].type = TokenType::Number;
+                        } else {
+                            cout << "ERROR: Value not inputted" <<'\n';
+                        }
+                    }
+                    break;
+                case TokenType::DivideD:
+                    if (!(i < 1)){
+                        bool leftNum = (tokens[i-1].type == TokenType::Number || tokens[i-1].type == TokenType::Group);
+                        bool rightNum = (tokens[i+1].type == TokenType::Number || tokens[i+1].type == TokenType::Group);
+                        if (leftNum && rightNum){
+                            float lval = (tokens[i-1].type == TokenType::Group) ? stof(compilepart(tokenize(tokens[i-1].value)).value) : stof(tokens[i-1].value);
+                            float rval = (tokens[i+1].type == TokenType::Group) ? stof(compilepart(tokenize(tokens[i+1].value)).value) : stof(tokens[i+1].value);
+                            tokens[i+1].value = to_string(float(lval/rval));
+                            tokens[i+1].type = TokenType::Number;
+                        } else {
+                            cout << "ERROR: Value not inputted" <<'\n';
+                        }
+                    }
+                    break;
+                case TokenType::DivideI:
+                    if (!(i < 1)){
+                        bool leftNum = (tokens[i-1].type == TokenType::Number || tokens[i-1].type == TokenType::Group);
+                        bool rightNum = (tokens[i+1].type == TokenType::Number || tokens[i+1].type == TokenType::Group);
+                        if (leftNum && rightNum){
+                            int lval = (tokens[i-1].type == TokenType::Group) ? stoi(compilepart(tokenize(tokens[i-1].value)).value) : stoi(tokens[i-1].value);
+                            int rval = (tokens[i+1].type == TokenType::Group) ? stoi(compilepart(tokenize(tokens[i+1].value)).value) : stoi(tokens[i+1].value);
+                            tokens[i+1].value = to_string(int(lval/rval));
                             tokens[i+1].type = TokenType::Number;
                         } else {
                             cout << "ERROR: Value not inputted" <<'\n';
